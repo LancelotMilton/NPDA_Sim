@@ -275,10 +275,46 @@ $(document).ready(function() {
     };
 
     // --- History Management ---
-    const saveState = (actionDescription) => {
+    /* const saveState = (actionDescription) => {
         // Simple history: deep copy of the automaton state.
         // Note: This doesn't save Raphael objects, which is why we redraw.
         const snapshot = JSON.stringify(automaton);
+        history.push(snapshot);
+        if (history.length > 20) history.shift(); // Limit history size
+    }; */
+    //corrected saveState, May not work like it's supposed to 
+    const saveState = (actionDescription) => {
+        // Create a deep copy of the automaton that is safe to stringify
+        // by excluding the non-serializable Raphael JS objects.
+        const cleanAutomaton = {
+            states: {},
+            transitions: []
+        };
+
+        // 1. Copy states, but only the serializable data properties.
+        for (const stateName in automaton.states) {
+            const state = automaton.states[stateName];
+            cleanAutomaton.states[stateName] = {
+                name: state.name,
+                x: state.x,
+                y: state.y,
+                isInitial: state.isInitial,
+                isFinal: state.isFinal
+                // Note: We explicitly DO NOT copy raphaelCircle, raphaelSet, etc.
+            };
+        }
+
+        // 2. Copy transitions, excluding any Raphael properties.
+        cleanAutomaton.transitions = automaton.transitions.map(trans => ({
+            from: trans.from,
+            to: trans.to,
+            input: trans.input,
+            pop: trans.pop,
+            push: trans.push
+            // Note: We explicitly DO NOT copy raphaelPath, raphaelSet, etc.
+        }));
+
+        const snapshot = JSON.stringify(cleanAutomaton);
         history.push(snapshot);
         if (history.length > 20) history.shift(); // Limit history size
     };
