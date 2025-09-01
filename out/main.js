@@ -85,9 +85,11 @@ $(document).ready(function() {
                 <div class="togglebar-header">States</div>
                 <div class="togglebar-content" id="states-list"></div>
             </div>
+            <div class="togglebar">
+                <button onclick=console.log(automaton.states)>clickme</button> 
+            </div>
         `);
     };
-
     // --- State and Transition Drawing ---
     const drawAutomaton = () => {
         paper.clear();
@@ -109,10 +111,9 @@ $(document).ready(function() {
 
         // Add visual indicators
         updateStateVisuals(state);
-
         // Add event listeners
         state.raphaelSet.click(() => selectState(state));
-        state.raphaelSet.drag(
+        /* state.raphaelSet.drag(
             (dx, dy) => { // on move
                 state.x = state.ox + dx;
                 state.y = state.oy + dy;
@@ -128,6 +129,43 @@ $(document).ready(function() {
                 saveState("drag state");
             }
         );
+        */
+        state.raphaelSet.drag(
+    function(dx, dy) {
+        const newX = state.ox + dx;
+        const newY = state.oy + dy;
+        
+        // Update coordinates
+        state.x = newX;
+        state.y = newY;
+        
+        // Move main circle and label
+        state.raphaelCircle.attr({ cx: newX, cy: newY });
+        state.raphaelLabel.attr({ x: newX, y: newY });
+
+        // Move final state circle if present
+        if (state.raphaelFinalCircle) {
+            state.raphaelFinalCircle.attr({ cx: newX, cy: newY });
+        }
+
+        // Move initial arrow if present
+        if (state.raphaelInitialArrow) {
+            const path = `M${newX - STATE_RADIUS - 30},${newY}L${newX - STATE_RADIUS},${newY}`;
+            state.raphaelInitialArrow.attr({ path });
+        }
+
+        // Update transitions
+        updateTransitionsForState(state.name);
+    },
+    function() { // drag start
+        state.ox = state.x;
+        state.oy = state.y;
+    },
+    function() { // drag end
+        saveState("drag state");
+    }
+);
+
     };
 
     const updateStateVisuals = (state) => {
@@ -212,19 +250,7 @@ $(document).ready(function() {
     const updateStatesList = () => {
         const list = $("#states-list");
         list.empty();
-        Object.values(automaton.states).forEach(state => {
-            list.append(`
-                <div class="list-item">
-                    <span>${state.name} ${state.isInitial ? '(Initial)' : ''} ${state.isFinal ? '(Final)' : ''}</span>
-                    <button class="btn delete btn-delete-state" data-name="${state.name}">Delete</button>
-                </div>
-            `);
-        });
-    };
-
-    const updateTransitionsList = () => {
-        const list = $("#transitions-list");
-        list.empty();
+        Object.values(automaton.states).forEach(state => { list.append(` <div class="list-item"> <span>${state.name} ${state.isInitial ? '(Initial)' : ''} ${state.isFinal ? '(Final)' : ''}</span> <button class="btn delete btn-delete-state" data-name="${state.name}">Delete</button> </div> `); }); }; const updateTransitionsList = () => { const list = $("#transitions-list"); list.empty();
         automaton.transitions.forEach((trans, index) => {
             const label = `(${trans.from}, ${trans.input || EPSILON}, ${trans.pop || EPSILON}) → (${trans.to}, ${trans.push || EPSILON})`;
             list.append(`
