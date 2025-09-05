@@ -85,9 +85,6 @@ $(document).ready(function() {
                 <div class="togglebar-header">States</div>
                 <div class="togglebar-content" id="states-list"></div>
             </div>
-            <div class="togglebar">
-                <button onclick=console.log(automaton.states)>clickme</button> 
-            </div>
         `);
     };
     // --- State and Transition Drawing ---
