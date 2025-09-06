@@ -200,7 +200,6 @@ $(document).ready(function() {
             const path = `M${newX - STATE_RADIUS - 30},${newY}L${newX - STATE_RADIUS},${newY}`;
             state.raphaelInitialArrow.attr({ path });
         }
-
         // Update transitions
         updateTransitionsForState(state.name);
     },
@@ -583,6 +582,7 @@ $(document).ready(function() {
     });
     */ 
     //New CheckBox Handler (with probable bug fixes):
+    // Handle Initial checkbox
     $("#sidebar").on("change", "#selected-is-initial", function () {
         if (!selectedItem) return;
         saveState("set initial state");
@@ -590,22 +590,34 @@ $(document).ready(function() {
         const isChecked = $(this).is(":checked");
 
         // Ensure only one initial state
-        Object.values(automaton.states).forEach(s => s.isInitial = false);
+        Object.values(automaton.states).forEach(s => {
+            s.isInitial = false;
+        });
 
-        const state = automaton.states[selectedItem];
-        state.isInitial = isChecked;
+        // Set the current state as initial (if checked)
+        automaton.states[selectedItem].isInitial = isChecked;
 
-        updateStateVisuals(state);
+        // Refresh visuals for ALL states
+        Object.values(automaton.states).forEach(updateStateVisuals);
+
+        // Refresh sidebar
+        updateSelectedItemView();
     });
 
-    $("#sidebar").on("change", "#selected-is-final", function() {
+    // Handle Final checkbox
+    $("#sidebar").on("change", "#selected-is-final", function () {
         if (!selectedItem) return;
         saveState("set final state");
-        /* automaton.states[selectedItem].isFinal = $(this).is(":checked");
-        updateAllViews(); */
-        state.isFinal = $(this).is(":checked");
 
-        updateStateVisuals(state);
+        const isChecked = $(this).is(":checked");
+
+        // Update final state flag
+        automaton.states[selectedItem].isFinal = isChecked;
+
+        // Refresh visuals for ALL states
+        Object.values(automaton.states).forEach(updateStateVisuals);
+
+        // Refresh sidebar
+        updateSelectedItemView();
     });
-
 });
