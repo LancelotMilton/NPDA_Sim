@@ -70,7 +70,7 @@ $(document).ready(function() {
             <div class="togglebar">
                 <div class="togglebar-header">Test Cases</div>
                 <div class="togglebar-content">
-                    <textarea id="test-cases-input" placeholder="Enter one input string per line..."></textarea>
+                    <textarea id="test-cases-input" placeholder="Enter one input string per line. For the empty string input 'epsilon'"></textarea>
                     <button id="test-cases-run" class="btn">Run Simulation</button>
                     <div id="output-terminal"></div>
                 </div>
@@ -215,33 +215,39 @@ $(document).ready(function() {
     };
 */
     const updateStateVisuals = (state) => {
-        // Final state (double circle)
-        if (state.isFinal) {
-            if (!state.raphaelFinalCircle) {
-                state.raphaelFinalCircle = paper.circle(state.x, state.y, STATE_RADIUS - 5).attr(ATTRS.finalState);
-                state.raphaelSet.push(state.raphaelFinalCircle);
-            }
-            state.raphaelFinalCircle.toBack();
-            state.raphaelCircle.toFront();
-            state.raphaelLabel.toFront();
-        } else if (state.raphaelFinalCircle) {
-            state.raphaelFinalCircle.remove();
-            state.raphaelFinalCircle = null;
+    // Final state (double circle)
+    if (state.isFinal) {
+        if (!state.raphaelFinalCircle) {
+            state.raphaelFinalCircle = paper.circle(state.x, state.y, STATE_RADIUS - 5).attr(ATTRS.finalState);
+        } else {
+            state.raphaelFinalCircle.attr({ cx: state.x, cy: state.y });
         }
 
-        // Initial state (incoming arrow)
-        if (state.isInitial) {
-            if (!state.raphaelInitialArrow) {
-                const path = `M${state.x - STATE_RADIUS - 30},${state.y}L${state.x - STATE_RADIUS},${state.y}`;
-                state.raphaelInitialArrow = paper.path(path).attr(ATTRS.initialArrow);
-                state.raphaelSet.push(state.raphaelInitialArrow);
-            }
-             state.raphaelInitialArrow.attr({ path: `M${state.x - STATE_RADIUS - 30},${state.y}L${state.x - STATE_RADIUS},${state.y}` });
-        } else if (state.raphaelInitialArrow) {
-            state.raphaelInitialArrow.remove();
-            state.raphaelInitialArrow = null;
+        // Ensure proper z-order: main circle at back, final circle above it, label on top
+        state.raphaelCircle.toBack();
+        state.raphaelFinalCircle.toFront();
+        state.raphaelLabel.toFront();
+    } else if (state.raphaelFinalCircle) {
+        state.raphaelFinalCircle.remove();
+        state.raphaelFinalCircle = null;
+    }
+
+    // Initial state (incoming arrow)
+    if (state.isInitial) {
+        if (!state.raphaelInitialArrow) {
+            const path = `M${state.x - STATE_RADIUS - 30},${state.y}L${state.x - STATE_RADIUS},${state.y}`;
+            state.raphaelInitialArrow = paper.path(path).attr(ATTRS.initialArrow);
+        } else {
+            state.raphaelInitialArrow.attr({
+                path: `M${state.x - STATE_RADIUS - 30},${state.y}L${state.x - STATE_RADIUS},${state.y}`
+            });
         }
-    };
+        state.raphaelInitialArrow.toBack(); // keep arrow behind circle
+    } else if (state.raphaelInitialArrow) {
+        state.raphaelInitialArrow.remove();
+        state.raphaelInitialArrow = null;
+    }
+};
 
     const drawTransition = (trans) => {
         const fromState = automaton.states[trans.from];
@@ -476,7 +482,12 @@ $(document).ready(function() {
 
     // --- Simulation Logic ---
     const runSimulation = () => {
-        const inputs = $("#test-cases-input").val().split('\n').filter(line => line.trim() !== '');
+        const inputs = $("#test-cases-input")
+            .val()
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line !== '');
+
         const output = $("#output-terminal");
         output.empty();
 
@@ -488,12 +499,15 @@ $(document).ready(function() {
         const initialState = initialStates[0].name;
 
         inputs.forEach(inputString => {
-            const result = simulate(initialState, inputString);
+            // Convert "epsilon" → ""
+            const processedInput = (inputString.toLowerCase() === "epsilon") ? "" : inputString;
+
+            const result = simulate(initialState, processedInput);
             const resultClass = result ? 'result-accepted' : 'result-rejected';
             const resultText = result ? 'Accepted' : 'Rejected';
             output.append(`<div>'${inputString}': <span class="${resultClass}">${resultText}</span></div>`);
         });
-    };
+};
 
     const simulate = (initialState, inputString) => {
         // A "configuration" is [state, remainingInput, stack]
