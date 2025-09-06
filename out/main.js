@@ -96,7 +96,74 @@ $(document).ready(function() {
         Object.values(automaton.states).forEach(drawState);
     };
 
+    
     const drawState = (state) => {
+        // Remove old Raphael visuals if re-drawing
+        if (state.raphaelSet) {
+            state.raphaelSet.remove();
+        }
+        if (state.raphaelFinalCircle) {
+            state.raphaelFinalCircle.remove();
+            state.raphaelFinalCircle = null;
+        }
+        if (state.raphaelInitialArrow) {
+            state.raphaelInitialArrow.remove();
+            state.raphaelInitialArrow = null;
+        }
+
+    // Main circle
+        state.raphaelCircle = paper.circle(state.x, state.y, STATE_RADIUS).attr(ATTRS.state);
+
+    // Label
+        state.raphaelLabel = paper.text(state.x, state.y, state.name).attr(ATTRS.stateLabel);
+
+    // Combine into a set for dragging
+        state.raphaelSet = paper.set(state.raphaelCircle, state.raphaelLabel);
+
+    // Add visual indicators
+        updateStateVisuals(state);
+
+    // Add event listeners
+        state.raphaelSet.click(() => selectState(state));
+
+    // Drag functionality
+        state.raphaelSet.drag(
+            function (dx, dy) {
+                const newX = state.ox + dx;
+                const newY = state.oy + dy;
+
+            // Update coordinates
+                state.x = newX;
+                state.y = newY;
+
+            // Move main circle and label
+                state.raphaelCircle.attr({ cx: newX, cy: newY });
+                state.raphaelLabel.attr({ x: newX, y: newY });
+
+            // Move final state circle if present
+                if (state.raphaelFinalCircle) {
+                    state.raphaelFinalCircle.attr({ cx: newX, cy: newY });
+                }
+
+            // Move initial arrow if present
+                if (state.raphaelInitialArrow) {
+                    const path = `M${newX - STATE_RADIUS - 30},${newY}L${newX - STATE_RADIUS},${newY}`;
+                    state.raphaelInitialArrow.attr({ path });
+                }
+
+            // Update transitions
+                updateTransitionsForState(state.name);
+            },
+            function () {
+                state.ox = state.x;
+                state.oy = state.y;
+            },
+            function () {
+                saveState("drag state");
+            }
+        );
+    };
+    /* const drawState = (state) => {
         // Main circle
         state.raphaelCircle = paper.circle(state.x, state.y, STATE_RADIUS).attr(ATTRS.state);
 
@@ -110,23 +177,6 @@ $(document).ready(function() {
         updateStateVisuals(state);
         // Add event listeners
         state.raphaelSet.click(() => selectState(state));
-        /* state.raphaelSet.drag(
-            (dx, dy) => { // on move
-                state.x = state.ox + dx;
-                state.y = state.oy + dy;
-                state.raphaelSet.attr({ transform: `t${dx},${dy}` });
-                updateTransitionsForState(state.name);
-            },
-            () => { // on start
-                state.ox = state.x;
-                state.oy = state.y;
-                state.raphaelSet.attr({ transform: "" });
-            },
-            () => { // on end
-                saveState("drag state");
-            }
-        );
-        */
         state.raphaelSet.drag(
     function(dx, dy) {
         const newX = state.ox + dx;
@@ -164,7 +214,7 @@ $(document).ready(function() {
 );
 
     };
-
+*/
     const updateStateVisuals = (state) => {
         // Final state (double circle)
         if (state.isFinal) {
@@ -522,7 +572,7 @@ $(document).ready(function() {
     });
 
     // Selected item changes
-    $("#sidebar").on("change", "#selected-is-initial", function() {
+    /* $("#sidebar").on("change", "#selected-is-initial", function() {
         if (!selectedItem) return;
         saveState("set initial state");
         const isChecked = $(this).is(":checked");
@@ -531,12 +581,31 @@ $(document).ready(function() {
         automaton.states[selectedItem].isInitial = isChecked;
         updateAllViews();
     });
+    */ 
+    //New CheckBox Handler (with probable bug fixes):
+    $("#sidebar").on("change", "#selected-is-initial", function () {
+        if (!selectedItem) return;
+        saveState("set initial state");
+
+        const isChecked = $(this).is(":checked");
+
+        // Ensure only one initial state
+        Object.values(automaton.states).forEach(s => s.isInitial = false);
+
+        const state = automaton.states[selectedItem];
+        state.isInitial = isChecked;
+
+        updateStateVisuals(state);
+    });
 
     $("#sidebar").on("change", "#selected-is-final", function() {
         if (!selectedItem) return;
         saveState("set final state");
-        automaton.states[selectedItem].isFinal = $(this).is(":checked");
-        updateAllViews();
+        /* automaton.states[selectedItem].isFinal = $(this).is(":checked");
+        updateAllViews(); */
+        state.isFinal = $(this).is(":checked");
+
+        updateStateVisuals(state);
     });
 
 });
