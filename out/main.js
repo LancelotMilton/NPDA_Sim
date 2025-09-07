@@ -270,11 +270,28 @@ $(document).ready(function() {
             const endY = toState.y - STATE_RADIUS * Math.sin(angle);
             
             // Introduce a curve for multiple transitions
-            const existingCount = automaton.transitions.filter(t => t.from === trans.from && t.to === trans.to).length;
+            /* const existingCount = automaton.transitions.filter(t => t.from === trans.from && t.to === trans.to).length;
             const curve = (existingCount > 1) ? 20 * (existingCount -1) : 0;
             const midX = (startX + endX) / 2 - curve * Math.sin(angle);
             const midY = (startY + endY) / 2 + curve * Math.cos(angle);
-            
+            */
+            // All transitions from -> to
+            const samePair = automaton.transitions.filter(t => t.from === trans.from && t.to === trans.to);
+
+            // Find index of THIS transition among them
+            const index = samePair.indexOf(trans);
+
+            // Spread curves around the straight line
+            const total = samePair.length;
+            let curve = 0;
+            if (total > 1) {
+                const spacing = 40; // adjust to make curves wider apart
+                curve = (index - (total - 1) / 2) * spacing;
+            }
+
+            const midX = (startX + endX) / 2 - curve * Math.sin(angle);
+            const midY = (startY + endY) / 2 + curve * Math.cos(angle);
+
             const path = `M${startX},${startY}Q${midX},${midY} ${endX},${endY}`;
             trans.raphaelPath = paper.path(path).attr(ATTRS.transition);
             trans.raphaelLabel = paper.text(midX, midY, label).attr(ATTRS.transitionLabel);
