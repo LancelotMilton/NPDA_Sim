@@ -70,7 +70,7 @@ $(document).ready(function() {
             <div class="togglebar">
                 <div class="togglebar-header">Test Cases</div>
                 <div class="togglebar-content">
-                    <textarea id="test-cases-input" placeholder="Enter one input string per line. For the empty string input 'epsilon'"></textarea>
+                    <textarea id="test-cases-input" placeholder="Enter one input string per line. For the empty string input 'epsilon'. Z is initial stack symbol."></textarea>
                     <button id="test-cases-run" class="btn">Run Simulation</button>
                     <div id="output-terminal"></div>
                 </div>
@@ -319,7 +319,22 @@ $(document).ready(function() {
     const updateStatesList = () => {
         const list = $("#states-list");
         list.empty();
-        Object.values(automaton.states).forEach(state => { list.append(` <div class="list-item"> <span>${state.name} ${state.isInitial ? '(Initial)' : ''} ${state.isFinal ? '(Final)' : ''}</span> <button class="btn delete btn-delete-state" data-name="${state.name}">Delete</button> </div> `); }); }; const updateTransitionsList = () => { const list = $("#transitions-list"); list.empty();
+        Object.values(automaton.states).forEach(state => { 
+            list.append(` 
+                <div class="list-item"> 
+                    <span>
+                        ${state.name} 
+                        ${state.isInitial ? '(Initial)' : ''} 
+                        ${state.isFinal ? '(Final)' : ''}
+                    </span> 
+                    <button class="btn delete btn-delete-state" 
+                        data-name="${state.name}">
+                        Delete
+                    </button> 
+                </div> `); 
+        }); 
+    };
+    const updateTransitionsList = () => { const list = $("#transitions-list"); list.empty();
         automaton.transitions.forEach((trans, index) => {
             const label = `(${trans.from}, ${trans.input || EPSILON}, ${trans.pop || EPSILON}) → (${trans.to}, ${trans.push || EPSILON})`;
             list.append(`
